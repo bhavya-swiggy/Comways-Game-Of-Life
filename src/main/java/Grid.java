@@ -1,11 +1,13 @@
+import java.util.Arrays;
 import java.util.List;
 
 public class Grid {
-    private final byte[][] grid;
     private final int numOfRows;
     private final int numOfColumns;
+    private final boolean printDeadCell;
+    private byte[][] grid;
 
-    public Grid(int numOfRows, int numOfColumns) {
+    public Grid(int numOfRows, int numOfColumns, boolean printDeadCell) {
         if (numOfRows < 0 || numOfColumns < 0) {
             throw new IllegalArgumentException(
                     String.format("Invalid dimensions {numOfRows : %s, numOfColumns : %s}",
@@ -13,13 +15,18 @@ public class Grid {
         }
         this.numOfRows = numOfRows;
         this.numOfColumns = numOfColumns;
+        this.printDeadCell = printDeadCell;
         this.grid = new byte[numOfRows][numOfColumns];
     }
 
     public void print() {
         for (byte[] row : grid) {
             for (byte cell : row) {
-                System.out.print(cell + " ");
+                if (printDeadCell || cell == 1) {
+                    System.out.print(cell + " ");
+                } else {
+                    System.out.print("  ");
+                }
             }
             System.out.println();
         }
@@ -33,7 +40,7 @@ public class Grid {
 
     private void setState(int[] coordinates, byte state) {
         if (coordinates.length != 2) {
-            throw new IllegalArgumentException("Invalid coordinates : " + coordinates);
+            throw new IllegalArgumentException("Invalid coordinates : " + Arrays.toString(coordinates));
         }
         int row = coordinates[0];
         int column = coordinates[1];
@@ -46,11 +53,13 @@ public class Grid {
     }
 
     public void step() {
+        byte[][] nextGenerationGrid = new byte[numOfRows][numOfColumns];
         for (int row = 0; row < grid.length; row++) {
             for (int column = 0; column < grid.length; column++) {
-                grid[row][column] = calculateNextState(row, column);
+                nextGenerationGrid[row][column] = calculateNextState(row, column);
             }
         }
+        grid = nextGenerationGrid;
     }
 
     private byte calculateNextState(int row, int column) {
@@ -66,28 +75,11 @@ public class Grid {
 
     private int getNumOfLiveNeighbours(int row, int column) {
         int numOfLiveNeighbours = 0;
-        if (row > 0) {
-            if (column > 0) {
-                numOfLiveNeighbours += grid[row - 1][column - 1];
-            }
-            numOfLiveNeighbours += grid[row - 1][column];
-            if (column < numOfColumns - 1) {
-                numOfLiveNeighbours += grid[row - 1][column + 1];
-            }
-        }
-        if (column > 0) {
-            numOfLiveNeighbours += grid[row][column - 1];
-        }
-        if (column < numOfColumns - 1) {
-            numOfLiveNeighbours += grid[row][column + 1];
-        }
-        if (row < numOfRows - 1) {
-            if (column > 0) {
-                numOfLiveNeighbours += grid[row + 1][column - 1];
-            }
-            numOfLiveNeighbours += grid[row + 1][column];
-            if (column < numOfColumns - 1) {
-                numOfLiveNeighbours += grid[row + 1][column + 1];
+        for (int i = row - 1;i <= row + 1; i++) {
+            for (int j = column - 1; j <= column + 1; j++) {
+                if (i >= 0 && i < numOfRows && j >= 0 && j < numOfColumns && !(i == row && j == column)) {
+                    numOfLiveNeighbours += grid[i][j];
+                }
             }
         }
         return numOfLiveNeighbours;
